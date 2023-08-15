@@ -3,29 +3,23 @@ import numpy as np
 import pandas as pd
 
 def get_data(file_loc):
-	f = open(file_loc, 'r')
-	data = []
-	for line in f:
-		new_arr = []
-		arr = line.split(' #')[0].split()
-		score = arr[0]
-		q_id = arr[1].split(':')[1]
-		new_arr.append(int(score))
-		new_arr.append(int(q_id))
-		arr = arr[2:]
-		for el in arr:
-			new_arr.append(float(el.split(':')[1]))
-		data.append(new_arr)
-	f.close()
+	with open(file_loc, 'r') as f:
+		data = []
+		for line in f:
+			arr = line.split(' #')[0].split()
+			score = arr[0]
+			q_id = arr[1].split(':')[1]
+			new_arr = [int(score), int(q_id)]
+			arr = arr[2:]
+			new_arr.extend(float(el.split(':')[1]) for el in arr)
+			data.append(new_arr)
 	return np.array(data)
 
 def group_queries(data):
 	query_indexes = {}
-	index = 0
-	for record in data:
+	for index, record in enumerate(data):
 		query_indexes.setdefault(record[1], [])
 		query_indexes[record[1]].append(index)
-		index += 1
 	return query_indexes
 
 

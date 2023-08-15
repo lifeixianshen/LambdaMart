@@ -59,7 +59,7 @@ def ideal_dcg(scores):
 		Ideal_DCG_val: int
 			This is the value of the Ideal DCG on the given scores
 	"""
-	scores = [score for score in sorted(scores)[::-1]]
+	scores = list(sorted(scores)[::-1])
 	return dcg(scores)
 
 def ideal_dcg_k(scores, k):
@@ -77,7 +77,7 @@ def ideal_dcg_k(scores, k):
 		Ideal_DCG_val: int
 			This is the value of the Ideal DCG on the given scores
 	"""
-	scores = [score for score in sorted(scores)[::-1]]
+	scores = list(sorted(scores)[::-1])
 	return dcg_k(scores, k)
 
 def single_dcg(scores, i, j):
@@ -168,11 +168,9 @@ def group_queries(training_data, qid_index):
 			The keys were the different query ids and teh values were the indexes in the training data that are associated of those keys.
 	"""
 	query_indexes = {}
-	index = 0
-	for record in training_data:
+	for index, record in enumerate(training_data):
 		query_indexes.setdefault(record[qid_index], [])
 		query_indexes[record[qid_index]].append(index)
-		index += 1
 	return query_indexes
 
 def get_pairs(scores):
@@ -194,9 +192,7 @@ def get_pairs(scores):
 		temp = sorted(query_scores, reverse=True)
 		pairs = []
 		for i in xrange(len(temp)):
-			for j in xrange(len(temp)):
-				if temp[i] > temp[j]:
-					pairs.append((i,j))
+			pairs.extend((i, j) for j in xrange(len(temp)) if temp[i] > temp[j])
 		query_pair.append(pairs)
 	return query_pair
 
@@ -218,7 +214,7 @@ class LambdaMART:
 			for using our implementation
 		"""
 
-		if tree_type != 'sklearn' and tree_type != 'original':
+		if tree_type not in ['sklearn', 'original']:
 			raise ValueError('The "tree_type" must be "sklearn" or "original"')
 		self.training_data = training_data
 		self.number_of_trees = number_of_trees
@@ -337,7 +333,7 @@ class LambdaMART:
 			Filename of the file you want to save
 		
 		"""
-		pickle.dump(self, open('%s.lmart' % (fname), "wb"), protocol=2)
+		pickle.dump(self, open(f'{fname}.lmart', "wb"), protocol=2)
 
 	def load(self, fname):
 		"""

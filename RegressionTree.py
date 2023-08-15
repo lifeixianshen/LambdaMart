@@ -16,10 +16,11 @@ def get_splitting_points(args):
 	# return a list of possible splitting values
 	attribute, col = args
 	attribute.sort()
-	possible_split = []
-	for i in range(len(attribute)-1):
-		if attribute[i] != attribute[i+1]:
-			possible_split.append(np.mean((attribute[i],attribute[i+1])))
+	possible_split = [
+		np.mean((attribute[i], attribute[i + 1]))
+		for i in range(len(attribute) - 1)
+		if attribute[i] != attribute[i + 1]
+	]
 	return possible_split, col
 
 # create a dictionary, key is the attribute number, value is whole list of possible splits for that column
@@ -71,21 +72,20 @@ def split_children(data, label, key, split):
 	return left_data, left_label, right_data, right_label 
 
 def least_square(label):
-	if not len(label):
-		return 0
-	return (np.sum(label)**2)/len(set(label))
+	return 0 if not len(label) else (np.sum(label)**2)/len(set(label))
 
 
 def create_leaf(label):
 	global node_id
 	node_id += 1
-	leaf = {'splittng_feature': None,
-			'left': None,
-			'right':None,
-			'is_leaf':True,
-			'index':node_id}
-	leaf['value'] = round(np.mean(label),3)
-	return leaf
+	return {
+		'splittng_feature': None,
+		'left': None,
+		'right': None,
+		'is_leaf': True,
+		'index': node_id,
+		'value': round(np.mean(label), 3),
+	}
 
 def find_splits_parallel(args):
 	var_space, label, col = args
@@ -100,21 +100,20 @@ def find_splits_parallel(args):
 def create_tree(data, all_pos_split, label, max_depth, ideal_ls, current_depth = 0):
 	remaining_features = all_pos_split
 	#stopping conditions
-	if sum([len(v)!= 0 for v in remaining_features.values()]) == 0:
+	if sum(len(v) != 0 for v in remaining_features.values()) == 0:
 		# If there are no remaining features to consider, make current node a leaf node
-		return create_leaf(label)    
-	# #Additional stopping condition (limit tree depth)
+		return create_leaf(label)
 	elif current_depth > max_depth:
 		return create_leaf(label)
 
-	
+
 	#######
 	min_error = None
 	split_var = None
 	min_split = None
 
 	var_spaces = [data.iloc[:,col].tolist() for col in xrange(data.shape[1])]
-	cols = [col for col in xrange(data.shape[1])]
+	cols = list(xrange(data.shape[1]))
 	pool = Pool()
 	for split, error, ierr, numf in pool.map(find_splits_parallel, zip(var_spaces, repeat(label), cols)):
 		if not min_error or error < min_error:
@@ -186,19 +185,19 @@ class RegressionTree:
 	def fit(self):
 		global node_id
 		node_id = 0
-		all_pos_split = {}
 		pool = Pool()
 		splitting_data = [self.training_data.iloc[:,col].tolist() for col in xrange(self.training_data.shape[1])]
-		cols = [col for col in xrange(self.training_data.shape[1])]
-		for dat, col in pool.map(get_splitting_points, zip(splitting_data, cols)):
-			all_pos_split[col] = dat
+		cols = list(xrange(self.training_data.shape[1]))
+		all_pos_split = {
+			col: dat
+			for dat, col in pool.map(get_splitting_points, zip(splitting_data, cols))
+		}
 		pool.close()
 		self.tree = create_tree(self.training_data, all_pos_split, self.labels, self.max_depth, self.ideal_ls)
 
 
 	def predict(self, test):
-		prediction = np.array([make_prediction(self.tree, x) for x in test])
-		return prediction
+		return np.array([make_prediction(self.tree, x) for x in test])
 
 if __name__ == '__main__':
 	#read in data, label
